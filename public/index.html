@@ -9,17 +9,31 @@
         font-family: Arial, sans-serif;
         background: #f7f7f8;
         margin: 0;
-        padding: 24px;
+        padding: clamp(12px, 2vw, 24px);
         color: #1f2937;
       }
 
       .card {
-        max-width: 800px;
+        width: min(96vw, 1400px);
         margin: 0 auto;
         background: #ffffff;
         border-radius: 8px;
         border: 1px solid #e5e7eb;
-        padding: 20px;
+        padding: clamp(14px, 2vw, 24px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .brand-logo {
+        width: 440px;
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
       }
 
       h1 {
@@ -187,10 +201,52 @@
         width: auto;
         padding: 6px 10px;
       }
+
+      @media (max-width: 1024px) {
+        .card {
+          width: min(98vw, 1100px);
+        }
+
+        .row {
+          grid-template-columns: 1fr;
+        }
+
+        .results-toolbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 10px;
+        }
+
+        .brand-logo {
+          width: min(100%, 360px);
+        }
+
+        .toolbar-controls {
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .pagination {
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .checkbox-list {
+          height: 180px;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="card">
+      <div class="brand">
+        <img class="brand-logo" src="/logo.png" alt="Aldar International for Governance Consultancy" />
+      </div>
       <h1>Risk Search</h1>
 
       <div id="askSection" class="section">

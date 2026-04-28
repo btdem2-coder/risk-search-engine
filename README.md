@@ -51,3 +51,8 @@ Node.js web app for searching risk records using Azure AI Search + Azure OpenAI 
 
 - Do not commit `.env`.
 - If any real keys were ever committed/shared, rotate them in Azure/OpenAI and update Render env vars.
+- Optional Basic Auth:
+  - Single user: set `APP_USER` and `APP_PASS`.
+  - Multiple users: set `APP_USERS` as comma-separated `username:password` pairs (example: `APP_USERS=admin:pass1,ops:pass2`).
+  - `APP_USERS` and `APP_USER`/`APP_PASS` can be used together.
+- `GET /health` remains public for uptime checks.

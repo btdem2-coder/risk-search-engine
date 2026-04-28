@@ -8,10 +8,77 @@ const { askRiskSearch, getFilterOptions } = require("./ask");
 
 const PORT = Number(process.env.PORT) || 3000;
 const indexHtmlPath = path.join(__dirname, "public", "index.html");
+const APP_USER = process.env.APP_USER;
+const APP_PASS = process.env.APP_PASS;
+const APP_USERS = process.env.APP_USERS;
+const LOGO_PATH =
+  process.env.LOGO_PATH ||
+  "C:\\Users\\barak\\.cursor\\projects\\c-Users-barak-Projects-risk-search-console\\assets\\c__Users_barak_AppData_Roaming_Cursor_User_workspaceStorage_1ffc1ae633201fa4c50ea9309d51ad10_images_image-8f7b084f-1c7e-43bb-88a0-ce0851340db0.png";
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json" });
   res.end(JSON.stringify(payload));
+}
+
+function parseBasicAuthHeader(headerValue) {
+  if (!headerValue || !headerValue.startsWith("Basic ")) return null;
+  const encoded = headerValue.slice(6).trim();
+  if (!encoded) return null;
+
+  try {
+    const decoded = Buffer.from(encoded, "base64").toString("utf8");
+    const separatorIndex = decoded.indexOf(":");
+    if (separatorIndex < 0) return null;
+    return {
+      username: decoded.slice(0, separatorIndex),
+      password: decoded.slice(separatorIndex + 1),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseAppUsersList(rawValue) {
+  if (!rawValue) return [];
+
+  return String(rawValue)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((pair) => {
+      const separatorIndex = pair.indexOf(":");
+      if (separatorIndex <= 0) return null;
+      const username = pair.slice(0, separatorIndex).trim();
+      const password = pair.slice(separatorIndex + 1).trim();
+      if (!username || !password) return null;
+      return { username, password };
+    })
+    .filter(Boolean);
+}
+
+const configuredUsers = parseAppUsersList(APP_USERS);
+if (APP_USER && APP_PASS) {
+  configuredUsers.push({ username: APP_USER, password: APP_PASS });
+}
+
+function isAuthenticated(req) {
+  // Auth is optional for local/dev convenience.
+  if (!configuredUsers.length) return true;
+
+  const credentials = parseBasicAuthHeader(req.headers.authorization);
+  if (!credentials) return false;
+  return configuredUsers.some(
+    (user) =>
+      user.username === credentials.username && user.password === credentials.password
+  );
+}
+
+function sendUnauthorized(res) {
+  res.writeHead(401, {
+    "Content-Type": "application/json",
+    "WWW-Authenticate": 'Basic realm="Aldar International Risk Search"',
+  });
+  res.end(JSON.stringify({ error: "Unauthorized." }));
 }
 
 function serveIndexHtml(res) {
@@ -22,6 +89,18 @@ function serveIndexHtml(res) {
     }
 
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(content);
+  });
+}
+
+function serveLogo(res) {
+  fs.readFile(LOGO_PATH, (error, content) => {
+    if (error) {
+      sendJson(res, 404, { error: "Logo file not found." });
+      return;
+    }
+
+    res.writeHead(200, { "Content-Type": "image/png" });
     res.end(content);
   });
 }
@@ -141,8 +220,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (!isAuthenticated(req)) {
+    sendUnauthorized(res);
+    return;
+  }
+
   if (method === "GET" && url === "/") {
     serveIndexHtml(res);
+    return;
+  }
+
+  if (method === "GET" && url === "/logo.png") {
+    serveLogo(res);
     return;
   }
 
