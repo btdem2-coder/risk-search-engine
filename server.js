@@ -8,12 +8,11 @@ const { askRiskSearch, getFilterOptions } = require("./ask");
 
 const PORT = Number(process.env.PORT) || 3000;
 const indexHtmlPath = path.join(__dirname, "public", "index.html");
+const defaultLogoPath = path.join(__dirname, "public", "logo.png");
 const APP_USER = process.env.APP_USER;
 const APP_PASS = process.env.APP_PASS;
 const APP_USERS = process.env.APP_USERS;
-const LOGO_PATH =
-  process.env.LOGO_PATH ||
-  "C:\\Users\\barak\\.cursor\\projects\\c-Users-barak-Projects-risk-search-console\\assets\\c__Users_barak_AppData_Roaming_Cursor_User_workspaceStorage_1ffc1ae633201fa4c50ea9309d51ad10_images_image-8f7b084f-1c7e-43bb-88a0-ce0851340db0.png";
+const LOGO_PATH = process.env.LOGO_PATH || defaultLogoPath;
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { "Content-Type": "application/json" });
@@ -96,7 +95,9 @@ function serveIndexHtml(res) {
 function serveLogo(res) {
   fs.readFile(LOGO_PATH, (error, content) => {
     if (error) {
-      sendJson(res, 404, { error: "Logo file not found." });
+      sendJson(res, 404, {
+        error: `Logo file not found at ${LOGO_PATH}. Add public/logo.png or set LOGO_PATH.`,
+      });
       return;
     }
 

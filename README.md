@@ -30,6 +30,7 @@ Node.js web app for searching risk records using Azure AI Search + Azure OpenAI 
    - `AZURE_SEARCH_INDEX`
    - `OPENAI_API_KEY`
    - `OPENAI_FILTER_MODEL` (optional, defaults to `gpt-4o-mini`)
+   - `LOGO_PATH` (optional; defaults to `public/logo.png` inside the repo)
 5. Deploy.
 
 ### Option B: Manual service setup
@@ -41,6 +42,11 @@ Node.js web app for searching risk records using Azure AI Search + Azure OpenAI 
    - **Start Command**: `npm start`
 3. Add the same env vars listed above.
 4. Deploy.
+
+### Logo on Render
+
+- Default logo path is `public/logo.png` (works across local + Render).
+- Ensure `public/logo.png` exists in the repository, or set `LOGO_PATH` to a valid file path in the runtime environment.
 
 ## Health check
 
