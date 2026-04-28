@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: risk-search-console
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_SEARCH_ENDPOINT
+        sync: false
+      - key: AZURE_SEARCH_KEY
+        sync: false
+      - key: AZURE_SEARCH_INDEX
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_FILTER_MODEL
+        sync: false

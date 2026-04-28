@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Risk Search</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f7f7f8;
+        margin: 0;
+        padding: 24px;
+        color: #1f2937;
+      }
+
+      .card {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        padding: 20px;
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 22px;
+      }
+
+      label {
+        display: block;
+        margin-top: 12px;
+        margin-bottom: 6px;
+        font-weight: 600;
+      }
+
+      input,
+      select,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .section {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 14px;
+        margin-top: 14px;
+      }
+
+      .section h2 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+
+      .section p {
+        margin: 0 0 12px;
+        color: #4b5563;
+        font-size: 13px;
+      }
+
+      fieldset {
+        border: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .section.disabled {
+        opacity: 0.55;
+      }
+
+      button {
+        margin-top: 16px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        background: #93c5fd;
+        cursor: not-allowed;
+      }
+
+      .status {
+        margin-top: 12px;
+        font-size: 14px;
+      }
+
+      .results {
+        margin-top: 18px;
+      }
+
+      .results-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+
+      .toolbar-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .toolbar-controls select {
+        width: auto;
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+
+      .checkbox-list {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 8px;
+        height: 230px;
+        overflow-y: auto;
+        background: #fff;
+      }
+
+      .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .checkbox-item input {
+        width: auto;
+        padding: 0;
+      }
+
+      .checkbox-item label {
+        margin: 0;
+        font-weight: 400;
+      }
+
+      .results-table-wrap {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .results-table th,
+      .results-table td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px;
+        vertical-align: top;
+        text-align: left;
+      }
+
+      .results-table th:first-child,
+      .results-table td:first-child {
+        width: 36px;
+        text-align: center;
+      }
+
+      .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .pagination button {
+        margin-top: 0;
+        width: auto;
+        padding: 6px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Risk Search</h1>
+
+      <div id="askSection" class="section">
+        <h2>Prompt Search</h2>
+        <p>Ask a question and optionally narrow by a single entity and industry.</p>
+        <fieldset id="askFieldset">
+          <label for="question">Ask Prompt</label>
+          <input id="question" placeholder="Type your question..." />
+
+          <div class="row">
+            <div>
+              <label for="entity">Entity</label>
+              <select id="entity">
+                <option value="">All entities</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="industry">Industry</label>
+              <select id="industry">
+                <option value="">All industries</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="submitBtn">Search</button>
+        </fieldset>
+      </div>
+
+      <div id="filtrationSection" class="section">
+        <h2>Filtration Results</h2>
+        <p>Filter directly with no ask prompt. You can choose multiple entities and industries.</p>
+        <fieldset id="filtrationFieldset">
+          <div class="row">
+            <div>
+              <label for="multiEntity">Entities</label>
+              <div id="multiEntity" class="checkbox-list"></div>
+            </div>
+
+            <div>
+              <label for="multiIndustry">Industries</label>
+              <div id="multiIndustry" class="checkbox-list"></div>
+            </div>
+          </div>
+
+          <button id="filtrationBtn">Run Filtration</button>
+        </fieldset>
+      </div>
+
+      <div id="status" class="status"></div>
+      <button id="exportBtn" disabled>Export Results to Excel</button>
+      <div id="results" class="results"></div>
+    </div>
+
+    <script>
+      const askSection = document.getElementById("askSection");
+      const filtrationSection = document.getElementById("filtrationSection");
+      const askFieldset = document.getElementById("askFieldset");
+      const filtrationFieldset = document.getElementById("filtrationFieldset");
+      const entitySelect = document.getElementById("entity");
+      const industrySelect = document.getElementById("industry");
+      const multiEntitySelect = document.getElementById("multiEntity");
+      const multiIndustrySelect = document.getElementById("multiIndustry");
+      const questionInput = document.getElementById("question");
+      const submitBtn = document.getElementById("submitBtn");
+      const filtrationBtn = document.getElementById("filtrationBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const statusEl = document.getElementById("status");
+      const resultsEl = document.getElementById("results");
+      const DEFAULT_PAGE_SIZE = 10;
+      let currentResults = [];
+      let currentFilters = {};
+      let lastRequestPayload = null;
+      let currentPage = 1;
+      let pageSize = DEFAULT_PAGE_SIZE;
+      let selectedResultIds = new Set();
+      let filtrationLinks = [];
+
+      function setStatus(text, isError = false) {
+        statusEl.textContent = text || "";
+        statusEl.style.color = isError ? "#b91c1c" : "#374151";
+      }
+
+      function addOptions(selectEl, values) {
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          selectEl.appendChild(option);
+        });
+      }
+
+      function addCheckboxOptions(containerEl, values, type) {
+        const html = values
+          .map((value, index) => {
+            const safeId = `${type}-${index}`;
+            return `
+              <div class="checkbox-item">
+                <input id="${safeId}" type="checkbox" value="${value}" data-filter-type="${type}" />
+                <label for="${safeId}">${value}</label>
+              </div>
+            `;
+          })
+          .join("");
+        containerEl.innerHTML = html;
+      }
+
+      function getCheckedValues(containerEl) {
+        return Array.from(containerEl.querySelectorAll('input[type="checkbox"]:checked')).map(
+          (checkbox) => checkbox.value
+        );
+      }
+
+      function setFiltrationCheckboxState(containerEl, valuesSet) {
+        const checkboxes = containerEl.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((checkbox) => {
+          const shouldEnable = valuesSet.has(checkbox.value);
+          checkbox.disabled = !shouldEnable;
+          if (!shouldEnable) {
+            checkbox.checked = false;
+          }
+        });
+      }
+
+      function getAvailableEntitiesForIndustries(selectedIndustries) {
+        if (!selectedIndustries.length) {
+          return new Set(filtrationLinks.map((link) => link.entity));
+        }
+        const selectedSet = new Set(selectedIndustries);
+        return new Set(
+          filtrationLinks
+            .filter((link) => selectedSet.has(link.industry))
+            .map((link) => link.entity)
+        );
+      }
+
+      function getAvailableIndustriesForEntities(selectedEntities) {
+        if (!selectedEntities.length) {
+          return new Set(filtrationLinks.map((link) => link.industry));
+        }
+        const selectedSet = new Set(selectedEntities);
+        return new Set(
+          filtrationLinks
+            .filter((link) => selectedSet.has(link.entity))
+            .map((link) => link.industry)
+        );
+      }
+
+      function updateFiltrationAvailability() {
+        const selectedEntities = getCheckedValues(multiEntitySelect);
+        const selectedIndustries = getCheckedValues(multiIndustrySelect);
+        const availableEntities = getAvailableEntitiesForIndustries(selectedIndustries);
+        const availableIndustries = getAvailableIndustriesForEntities(selectedEntities);
+
+        setFiltrationCheckboxState(multiEntitySelect, availableEntities);
+        setFiltrationCheckboxState(multiIndustrySelect, availableIndustries);
+        updateSectionLocks();
+      }
+
+      function getSectionState() {
+        const askHasInput =
+          Boolean(questionInput.value.trim()) ||
+          Boolean(entitySelect.value) ||
+          Boolean(industrySelect.value);
+
+        const filtrationHasInput =
+          getCheckedValues(multiEntitySelect).length > 0 ||
+          getCheckedValues(multiIndustrySelect).length > 0;
+
+        return { askHasInput, filtrationHasInput };
+      }
+
+      function updateSectionLocks() {
+        const { askHasInput, filtrationHasInput } = getSectionState();
+        const disableAsk = filtrationHasInput;
+        const disableFiltration = askHasInput;
+
+        askFieldset.disabled = disableAsk;
+        filtrationFieldset.disabled = disableFiltration;
+        askSection.classList.toggle("disabled", disableAsk);
+        filtrationSection.classList.toggle("disabled", disableFiltration);
+      }
+
+      async function loadOptions() {
+        try {
+          const response = await fetch("/api/options");
+          const data = await response.json();
+          const entities = data.entities || [];
+          const industries = data.industries || [];
+          filtrationLinks = data.links || [];
+          addOptions(entitySelect, entities);
+          addOptions(industrySelect, industries);
+          addCheckboxOptions(multiEntitySelect, entities, "entity");
+          addCheckboxOptions(multiIndustrySelect, industries, "industry");
+          updateFiltrationAvailability();
+          updateSectionLocks();
+        } catch {
+          setStatus("Could not load filter options.", true);
+        }
+      }
+
+      function renderResults(items, filters) {
+        currentResults = Array.isArray(items) ? items : [];
+        currentFilters = filters || {};
+        currentPage = 1;
+        selectedResultIds = new Set();
+        renderCurrentPage();
+      }
+
+      function renderCurrentPage() {
+        const items = currentResults;
+        const filters = currentFilters;
+        const entityFilter = Array.isArray(filters.entity)
+          ? filters.entity.join(", ")
+          : filters.entity;
+        const industryFilter = Array.isArray(filters.industry)
+          ? filters.industry.join(", ")
+          : filters.industry;
+        const filtersText = `Filters used - Entity: ${entityFilter || "Any"}, Industry: ${industryFilter || "Any"}`;
+
+        if (!items.length) {
+          resultsEl.innerHTML = `<p>${filtersText}</p><p>No results found.</p>`;
+          return;
+        }
+
+        const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+        if (currentPage > totalPages) currentPage = totalPages;
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageItems = items.slice(startIndex, startIndex + pageSize);
+        const allPageSelected =
+          pageItems.length > 0 &&
+          pageItems.every((item, index) => {
+            const globalIndex = startIndex + index;
+            const rowId = item.id || `row-${globalIndex}`;
+            return selectedResultIds.has(rowId);
+          });
+
+        const rowsHtml = pageItems
+          .map((item, index) => {
+            const globalIndex = startIndex + index;
+            const rowId = item.id || `row-${globalIndex}`;
+            const checked = selectedResultIds.has(rowId) ? "checked" : "";
+            return `
+              <tr>
+                <td>
+                  <input type="checkbox" class="result-checkbox" data-id="${rowId}" ${checked} />
+                </td>
+                <td>${globalIndex + 1}</td>
+                <td>${item.riskSubject || item.id || "Untitled"}</td>
+                <td>${item.score ?? ""}</td>
+                <td>${item.industry || ""}</td>
+                <td>${item.entity || ""}</td>
+                <td>${item.riskDescription || ""}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        const selectedCount = selectedResultIds.size;
+        const prevDisabled = currentPage <= 1 ? "disabled" : "";
+        const nextDisabled = currentPage >= totalPages ? "disabled" : "";
+
+        resultsEl.innerHTML = `
+          <p>${filtersText}</p>
+          <div class="results-toolbar">
+            <span>Total: ${items.length}</span>
+            <div class="toolbar-controls">
+              <label for="pageSizeSelect">Rows per page:</label>
+              <select id="pageSizeSelect">
+                <option value="10" ${pageSize === 10 ? "selected" : ""}>10</option>
+                <option value="25" ${pageSize === 25 ? "selected" : ""}>25</option>
+                <option value="50" ${pageSize === 50 ? "selected" : ""}>50</option>
+              </select>
+              <span>Selected: ${selectedCount}</span>
+            </div>
+          </div>
+          <div class="results-table-wrap">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      id="selectAllPageCheckbox"
+                      type="checkbox"
+                      ${allPageSelected ? "checked" : ""}
+                      title="Select all rows on current page"
+                    />
+                  </th>
+                  <th>#</th>
+                  <th>Risk</th>
+                  <th>Score</th>
+                  <th>Industry</th>
+                  <th>Entity</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="prevPageBtn" ${prevDisabled}>Previous</button>
+            <span>Page ${currentPage} of ${totalPages}</span>
+            <button id="nextPageBtn" ${nextDisabled}>Next</button>
+          </div>
+        `;
+
+        bindResultsInteractions();
+      }
+
+      function bindResultsInteractions() {
+        const prevPageBtn = document.getElementById("prevPageBtn");
+        const nextPageBtn = document.getElementById("nextPageBtn");
+        const pageSizeSelect = document.getElementById("pageSizeSelect");
+        const selectAllPageCheckbox = document.getElementById("selectAllPageCheckbox");
+        const checkboxes = document.querySelectorAll(".result-checkbox");
+
+        if (prevPageBtn) {
+          prevPageBtn.addEventListener("click", () => {
+            if (currentPage > 1) {
+              currentPage -= 1;
+              renderCurrentPage();
+            }
+          });
+        }
+
+        if (nextPageBtn) {
+          nextPageBtn.addEventListener("click", () => {
+            const totalPages = Math.max(1, Math.ceil(currentResults.length / pageSize));
+            if (currentPage < totalPages) {
+              currentPage += 1;
+              renderCurrentPage();
+            }
+          });
+        }
+
+        if (pageSizeSelect) {
+          pageSizeSelect.addEventListener("change", (event) => {
+            const newSize = Number(event.target.value) || DEFAULT_PAGE_SIZE;
+            pageSize = newSize;
+            currentPage = 1;
+            renderCurrentPage();
+          });
+        }
+
+        if (selectAllPageCheckbox) {
+          selectAllPageCheckbox.addEventListener("change", (event) => {
+            const shouldSelect = event.target.checked;
+            const startIndex = (currentPage - 1) * pageSize;
+            const pageItems = currentResults.slice(startIndex, startIndex + pageSize);
+
+            pageItems.forEach((item, index) => {
+              const globalIndex = startIndex + index;
+              const rowId = item.id || `row-${globalIndex}`;
+              if (shouldSelect) {
+                selectedResultIds.add(rowId);
+              } else {
+                selectedResultIds.delete(rowId);
+              }
+            });
+
+            renderCurrentPage();
+          });
+        }
+
+        checkboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", (event) => {
+            const id = event.target.getAttribute("data-id");
+            if (!id) return;
+            if (event.target.checked) {
+              selectedResultIds.add(id);
+            } else {
+              selectedResultIds.delete(id);
+            }
+            renderCurrentPage();
+          });
+        });
+      }
+
+      async function runRequest(payload, pendingText) {
+        submitBtn.disabled = true;
+        filtrationBtn.disabled = true;
+        exportBtn.disabled = true;
+        setStatus(pendingText);
+        resultsEl.innerHTML = "";
+
+        try {
+          const response = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Search failed.");
+          }
+
+          renderResults(data.results || [], data.filters || {});
+          lastRequestPayload = payload;
+          exportBtn.disabled = !(data.results || []).length;
+          setStatus(`Done. ${data.results?.length || 0} result(s).`);
+        } catch (error) {
+          setStatus(error.message || "Search failed.", true);
+          exportBtn.disabled = true;
+        } finally {
+          submitBtn.disabled = false;
+          filtrationBtn.disabled = false;
+          updateSectionLocks();
+        }
+      }
+
+      async function submitSearch() {
+        const question = questionInput.value.trim();
+        if (!question) {
+          setStatus("Please type a question first.", true);
+          return;
+        }
+
+        await runRequest(
+          {
+            question,
+            filters: {
+              entity: entitySelect.value || null,
+              industry: industrySelect.value || null,
+            },
+          },
+          "Searching..."
+        );
+      }
+
+      async function submitFiltrationSearch() {
+        const entities = getCheckedValues(multiEntitySelect);
+        const industries = getCheckedValues(multiIndustrySelect);
+        if (!entities.length && !industries.length) {
+          setStatus("Select at least one entity or industry for filtration.", true);
+          return;
+        }
+
+        await runRequest(
+          {
+            question: "",
+            filters: {
+              entity: entities.length ? entities : null,
+              industry: industries.length ? industries : null,
+            },
+          },
+          "Running filtration..."
+        );
+      }
+
+      function getExportPayload() {
+        const question = String(lastRequestPayload?.question || "").trim();
+        const mode = question ? "section1" : "section2";
+        return {
+          mode,
+          question,
+          selectedFilters: lastRequestPayload?.filters || {},
+          appliedFilters: currentFilters,
+          results: currentResults,
+        };
+      }
+
+      async function exportResults() {
+        if (!currentResults.length || !lastRequestPayload) {
+          setStatus("No results to export.", true);
+          return;
+        }
+
+        exportBtn.disabled = true;
+        setStatus("Preparing Excel export...");
+        try {
+          const response = await fetch("/api/export", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(getExportPayload()),
+          });
+
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Export failed.");
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `risk-search-export-${Date.now()}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+          setStatus(`Done. ${currentResults.length} result(s). Export downloaded.`);
+        } catch (error) {
+          setStatus(error.message || "Export failed.", true);
+        } finally {
+          exportBtn.disabled = !currentResults.length;
+        }
+      }
+
+      submitBtn.addEventListener("click", submitSearch);
+      filtrationBtn.addEventListener("click", submitFiltrationSearch);
+      exportBtn.addEventListener("click", exportResults);
+      questionInput.addEventListener("input", updateSectionLocks);
+      entitySelect.addEventListener("change", updateSectionLocks);
+      industrySelect.addEventListener("change", updateSectionLocks);
+      multiEntitySelect.addEventListener("change", updateSectionLocks);
+      multiIndustrySelect.addEventListener("change", updateSectionLocks);
+      multiEntitySelect.addEventListener("change", updateFiltrationAvailability);
+      multiIndustrySelect.addEventListener("change", updateFiltrationAvailability);
+      loadOptions();
+    </script>
+  </body>
+</html>
